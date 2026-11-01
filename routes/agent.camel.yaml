@@ -1,0 +1,38 @@
+- route:
+    id: ai-agent-chat-route
+    from:
+      uri: direct:aiChat
+      steps:
+        - log: "Agent received chat query: ${body}"
+        - setHeader:
+            name: CamelSpringAiChatUserMessage
+            simple: "${body}"
+        - setHeader:
+            name: CamelSpringAiChatSystemMessage
+            constant: >-
+              You are an AI Ops and Diagnostics Assistant running on Apache Camel.
+              Use available tools (e.g. prometheus, weather) to answer user questions with accurate diagnostics.
+        - choice:
+            when:
+              - simple: "{{mock.prometheus.enabled}} == 'true'"
+                steps:
+                  # If running in local mock/demo mode without active LLM keys, route to mock agent response:
+                  - setHeader:
+                      name: Content-Type
+                      value: application/json
+                  - setBody:
+                      simple: >-
+                        {
+                          "answer": "AI Agent received query: '${header.CamelSpringAiChatUserMessage}'. Executing diagnostics via Prometheus tool... Result: System healthy, memory 500MB, 14,285 requests handled.",
+                          "toolsUsed": ["prometheus"]
+                        }
+            otherwise:
+              steps:
+                # Spring AI integration call for live environments
+                - to: "spring-ai-chat:agent-chat?chatOperation=CHAT_SINGLE_MESSAGE&tags=monitoring,metrics,weather"
+                - choice:
+                    when:
+                      - simple: "${header.CamelSpringAiChatResponse} != null"
+                        steps:
+                          - setBody:
+                              simple: "${header.CamelSpringAiChatResponse}"

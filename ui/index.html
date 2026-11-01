@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apache Camel AI Agent & MCP Studio</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: var(--card-bg);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 1.25rem; color: var(--accent); }
+    .badge {
+      background: #0369a1;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .message {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .user-msg {
+      background: #2563eb;
+      align-self: flex-end;
+    }
+    .agent-msg {
+      background: #334155;
+      align-self: flex-start;
+      border-left: 3px solid var(--accent);
+    }
+    .input-bar {
+      display: flex;
+      gap: 0.75rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.85rem 1rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 0 1.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🐫 Apache Camel AI Agent & MCP Studio</h1>
+    <span class="badge">Standalone Demo</span>
+  </header>
+  <main>
+    <div class="chat-box" id="chat">
+      <div class="message agent-msg">
+        Hello! I am your Apache Camel Agent. I can query system metrics (Prometheus) and external tools (Weather). How can I help you today?
+      </div>
+    </div>
+    <div class="input-bar">
+      <input type="text" id="userInput" placeholder="Ask about system metrics or weather..." onkeypress="handleKey(event)"/>
+      <button onclick="sendPrompt()">Send</button>
+    </div>
+  </main>
+  <script>
+    async function sendPrompt() {
+      const input = document.getElementById("userInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, "user-msg");
+      input.value = "";
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await response.json();
+        const reply = typeof data === "object" ? (data.answer || JSON.stringify(data, null, 2)) : data;
+        appendMessage(reply, "agent-msg");
+      } catch (err) {
+        appendMessage("Error communicating with Agent backend: " + err.message, "agent-msg");
+      }
+    }
+
+    function appendMessage(text, className) {
+      const box = document.getElementById("chat");
+      const div = document.createElement("div");
+      div.className = "message " + className;
+      div.textContent = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function handleKey(e) {
+      if (e.key === "Enter") sendPrompt();
+    }
+  </script>
+</body>
+</html>

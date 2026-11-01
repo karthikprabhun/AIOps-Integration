@@ -1,0 +1,55 @@
+- route:
+    id: mcp-server-handler
+    from:
+      uri: platform-http:/mcp
+      steps:
+        - log: "Incoming MCP protocol request: ${body}"
+        - setHeader:
+            name: Content-Type
+            value: application/json
+        - choice:
+            when:
+              - simple: "${body} contains 'tools/list'"
+                steps:
+                  - setBody:
+                      constant: >-
+                        {
+                          "jsonrpc": "2.0",
+                          "result": {
+                            "tools": [
+                              {
+                                "name": "prometheus",
+                                "description": "Run Prometheus metric diagnostics",
+                                "inputSchema": {
+                                  "type": "object",
+                                  "properties": {
+                                    "query": { "type": "string", "description": "PromQL query string" }
+                                  },
+                                  "required": ["query"]
+                                }
+                              },
+                              {
+                                "name": "weather",
+                                "description": "Lookup city weather information",
+                                "inputSchema": {
+                                  "type": "object",
+                                  "properties": {
+                                    "city": { "type": "string", "description": "Name of the city" }
+                                  },
+                                  "required": ["city"]
+                                }
+                              }
+                            ]
+                          }
+                        }
+            otherwise:
+              steps:
+                - setBody:
+                    constant: >-
+                      {
+                        "jsonrpc": "2.0",
+                        "result": {
+                          "status": "acknowledged",
+                          "serverInfo": { "name": "camel-mcp-agent-server", "version": "1.0.0" }
+                        }
+                      }

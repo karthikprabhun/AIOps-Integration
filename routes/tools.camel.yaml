@@ -1,0 +1,46 @@
+- route:
+    id: tool-prometheus-metrics
+    from:
+      uri: ai-tool:prometheus?tags=monitoring,metrics&description=Query Prometheus system and application metrics&parameter.query=string&parameter.query.description=The PromQL query expression to execute&parameter.query.required=true
+      steps:
+        - log:
+            message: "AI Tool [prometheus] invoked with query: ${header.query}"
+            loggingLevel: INFO
+        - setProperty:
+            name: rawQuery
+            simple: "${header.query}"
+        - removeHeaders:
+            pattern: "*"
+            excludePattern: "breadcrumbId"
+        - setHeader:
+            name: CamelHttpMethod
+            constant: GET
+        - setHeader:
+            name: CamelHttpQuery
+            simple: "query=${exchangeProperty.rawQuery}"
+        - toD: "{{prometheus.url}}"
+        - log:
+            message: "Prometheus API response: ${body}"
+            loggingLevel: DEBUG
+
+- route:
+    id: tool-weather-lookup
+    from:
+      uri: ai-tool:weather?tags=external,weather&description=Lookup current weather for a city or region&parameter.city=string&parameter.city.description=City or region name&parameter.city.required=true
+      steps:
+        - log:
+            message: "AI Tool [weather] invoked for city: ${header.city}"
+            loggingLevel: INFO
+        - setProperty:
+            name: rawCity
+            simple: "${header.city}"
+        - removeHeaders:
+            pattern: "*"
+            excludePattern: "breadcrumbId"
+        - setHeader:
+            name: CamelHttpMethod
+            constant: GET
+        - setHeader:
+            name: CamelHttpQuery
+            simple: "city=${exchangeProperty.rawCity}&key={{weather.api.key}}"
+        - toD: "{{weather.url}}"

@@ -1,0 +1,83 @@
+- route:
+    id: mock-prometheus-api
+    from:
+      uri: platform-http:/mock/prometheus/api/v1/query
+      steps:
+        - log: "Mock Prometheus received query: ${header.CamelHttpQuery}"
+        - setHeader:
+            name: Content-Type
+            value: application/json
+        - setBody:
+            constant: >-
+              {
+                "status": "success",
+                "data": {
+                  "resultType": "vector",
+                  "result": [
+                    {
+                      "metric": {
+                        "__name__": "app_jvm_memory_used_bytes",
+                        "instance": "demo-instance-01",
+                        "job": "camel-services"
+                      },
+                      "value": [ 1761984000, "524288000" ]
+                    },
+                    {
+                      "metric": {
+                        "__name__": "app_http_requests_total",
+                        "instance": "demo-instance-01",
+                        "status": "200"
+                      },
+                      "value": [ 1761984000, "14285" ]
+                    }
+                  ]
+                }
+              }
+
+- route:
+    id: mock-weather-api
+    from:
+      uri: platform-http:/mock/weather/api/v1/data
+      steps:
+        - log: "Mock Weather received query: ${header.CamelHttpQuery}"
+        - setHeader:
+            name: Content-Type
+            value: application/json
+        - setBody:
+            constant: >-
+              {
+                "location": "Berlin, DE",
+                "temperature_c": 18.5,
+                "feels_like_c": 17.8,
+                "humidity": 65,
+                "condition": "Partly Cloudy",
+                "wind_speed_kmh": 12.4
+              }
+
+- route:
+    id: mock-llm-chat-api
+    from:
+      uri: platform-http:/mock/openai/v1/chat/completions
+      steps:
+        - log: "Mock OpenAI Chat received prompt"
+        - setHeader:
+            name: Content-Type
+            value: application/json
+        - setBody:
+            constant: >-
+              {
+                "id": "chatcmpl-mock-12345",
+                "object": "chat.completion",
+                "created": 1761984000,
+                "model": "gpt-4o-mini-mock",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "This is a simulated AI Agent response using mock metrics and tools. The system status is healthy with memory usage at 500MB and total requests at 14,285."
+                    },
+                    "finish_reason": "stop"
+                  }
+                ]
+              }

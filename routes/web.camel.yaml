@@ -1,0 +1,33 @@
+- route:
+    id: web-static-ui
+    from:
+      uri: platform-http:/
+      steps:
+        - setHeader:
+            name: Content-Type
+            value: text/html
+        - setBody:
+            constant: "resource:file:ui/index.html"
+
+- route:
+    id: web-chat-api
+    from:
+      uri: platform-http:/api/chat
+      steps:
+        - setHeader:
+            name: Access-Control-Allow-Origin
+            value: "*"
+        - setHeader:
+            name: Access-Control-Allow-Headers
+            value: "Content-Type, Authorization"
+        - setHeader:
+            name: Content-Type
+            value: application/json
+        - unmarshal:
+            json: {}
+        - setProperty:
+            name: userMessage
+            simple: "${body[message]}"
+        - setBody:
+            simple: "${exchangeProperty.userMessage}"
+        - to: direct:aiChat
